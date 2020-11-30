@@ -1,5 +1,5 @@
-Opam Sysinstall Plugin
----------------------
+opam-sysinstall
+---------------
 
 A small opam plugin for installing OCaml system compilers. The simplest way to use this is: 
 

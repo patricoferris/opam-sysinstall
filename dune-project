@@ -20,7 +20,4 @@
  (synopsis "Plugin to add install OCaml system compilers")
  (description
    "This opam plugin allows you to install a set of OCaml system compilers to a prefix of your choosing")
- (depends
-  bos
-  fmt
-  cmdliner))
+ (depends bos ocaml-version fmt cmdliner))
