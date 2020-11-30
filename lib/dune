@@ -1,0 +1,3 @@
+(library
+ (name opam_sysinstall)
+ (libraries ocaml-version cmdliner bos fmt fmt.tty))
