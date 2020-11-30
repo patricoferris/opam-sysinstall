@@ -11,6 +11,7 @@ bug-reports: "https://github.com/patricoferris/opam-sysinstall/issues"
 depends: [
   "dune" {>= "2.7"}
   "bos"
+  "ocaml-version"
   "fmt"
   "cmdliner"
   "odoc" {with-doc}
