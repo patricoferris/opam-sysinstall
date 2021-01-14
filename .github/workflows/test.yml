@@ -33,5 +33,5 @@ jobs:
         echo "let () = print_endline Sys.ocaml_version" > main.ml
         $GITHUB_WORKSPACE/ocaml/4.11.1/bin/ocamlopt main.ml -o eleven.out
         ./eleven.out
-        $GITHUB_WORKSPACE/ocaml/4.7.1/bin/ocamlopt main.ml -o seven.out
+        $GITHUB_WORKSPACE/ocaml/4.07.1/bin/ocamlopt main.ml -o seven.out
         ./seven.out
