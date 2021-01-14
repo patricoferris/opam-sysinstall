@@ -54,6 +54,7 @@ let run ocvs latest conf quiet no_log jobs dry_run =
         ocvs
   in
   let ocvs = List.filter bound_check ocvs in
+  let build_cmds = Opam.build_cmds ocvs in
   let len = List.length ocvs in
   if len = 0 then (
     error Fmt.stdout "Filtered out all OCaml Versions";
@@ -73,7 +74,16 @@ let run ocvs latest conf quiet no_log jobs dry_run =
     else info_run ~no_log
   in
   let dry f = if dry_run then Ok () else f () in
+  let run_list r lst =
+    let rec aux xs () =
+      match xs with [] -> Ok () | x :: xs -> r x >>= aux xs
+    in
+    aux lst ()
+  in
   let f tmpdir ocv =
+    let pre_configure =
+      List.find (fun (o, _) -> Ov.equal o ocv) build_cmds |> snd
+    in
     let res =
       dry (fun () -> OS.Dir.set_current tmpdir) >>= fun () ->
       r @@ Opam.source_compiler ocv >>= fun () ->
@@ -82,8 +92,13 @@ let run ocvs latest conf quiet no_log jobs dry_run =
             Fpath.(tmpdir / ("ocaml-base-compiler." ^ Ov.to_string ocv)))
       >>= fun () ->
       let conf = { conf with prefix = mk_prefix ocv } in
-      r @@ Ocaml.configure ocv conf >>= fun () ->
-      r @@ Ocaml.make_world_opt ~jobs >>= fun () -> r @@ Ocaml.make_install
+      run_list r
+        ( pre_configure
+        @ [
+            Ocaml.configure ocv conf;
+            Ocaml.make_world_opt ~jobs;
+            Ocaml.make_install;
+          ] )
     in
     res
     |> handle_error quiet ("system compiler " ^ Ov.to_string ocv ^ " installed")

@@ -22,5 +22,16 @@ jobs:
       run: opam exec -- dune build
     - name: Installing
       run: opam exec -- dune install
+    - name: Install location
+      run: mkdir -p /home/runner/ocaml
+    - name: Testing (dry run)
+      run: opam exec -- opam sysinstall build --prefix=/home/runner/ocaml --versions=4.11.1,4.07.1 --dry-run
     - name: Testing
-      run: opam exec -- dune runtest
+      run: opam exec -- opam sysinstall build --prefix=/home/runner/ocaml --versions=4.11.1,4.07.1
+    - name: Inspecting
+      run: |
+        echo "let () = print_endline Sys.ocaml_version" > main.ml
+        /home/runner/4.11.1/bin/ocamlopt main.ml -o eleven.out
+        ./eleven.out
+        /home/runner/4.7.1/bin/ocamlopt main.ml -o seven.out
+        ./seven.out
