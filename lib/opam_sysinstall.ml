@@ -27,7 +27,7 @@ let check_versions = function
          number of latest versions to install (e.g. --latest=3)";
       exit (-1)
 
-let bound_check ocv = Ov.compare ocv Ov.Releases.v4_08_0 >= 0
+let bound_check ocv = Ov.compare ocv Ov.Releases.v4_00 >= 0
 
 let first_n n =
   let rec aux m acc = function
@@ -43,7 +43,7 @@ let info_run ?env ?err ?(no_log = false) cmd =
   |> OS.Cmd.run_io ?env ?err cmd
   |> if no_log then OS.Cmd.to_null else OS.Cmd.to_stdout
 
-let run ocvs latest prefix quiet no_log jobs dry_run =
+let run ocvs latest conf quiet no_log jobs dry_run =
   let ocvs =
     if List.length ocvs = 0 then
       first_n (check_versions latest) (Ov.Releases.recent |> List.rev)
@@ -59,7 +59,7 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
     error Fmt.stdout "Filtered out all OCaml Versions";
     exit (-1) |> ignore );
   let mk_prefix ocv =
-    match prefix with
+    match conf.Ocaml.prefix with
     | Some p ->
         if len > 1 then Some (Filename.concat p (Ov.to_string ocv)) else Some p
     | None ->
@@ -81,7 +81,8 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
           OS.Dir.set_current
             Fpath.(tmpdir / ("ocaml-base-compiler." ^ Ov.to_string ocv)))
       >>= fun () ->
-      r @@ Ocaml.configure ?prefix:(mk_prefix ocv) () >>= fun () ->
+      let conf = { conf with prefix = mk_prefix ocv } in
+      r @@ Ocaml.configure ocv conf >>= fun () ->
       r @@ Ocaml.make_world_opt ~jobs >>= fun () -> r @@ Ocaml.make_install
     in
     res
@@ -93,14 +94,6 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
     ocvs
 
 open Cmdliner
-
-let prefix =
-  let docv = "PREFIX" in
-  let doc =
-    "The ./configure prefix parameter to use -- defaults to OCaml's built-in \
-     default"
-  in
-  Arg.(value & opt (some string) None & info ~doc ~docv [ "prefix"; "p" ])
 
 let ocvs =
   let doc = "OCaml version to build and install" in
@@ -137,7 +130,8 @@ let info =
   Term.info ~doc "build"
 
 let term =
-  Term.(pure run $ ocvs $ latest $ prefix $ quiet $ no_log $ jobs $ dry_run)
+  Term.(
+    pure run $ ocvs $ latest $ Ocaml.cmdliner $ quiet $ no_log $ jobs $ dry_run)
 
 let build = (term, info)
 
