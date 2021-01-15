@@ -10,6 +10,10 @@ homepage: "https://github.com/patricoferris/opam-sysinstall"
 bug-reports: "https://github.com/patricoferris/opam-sysinstall/issues"
 depends: [
   "dune" {>= "2.7"}
+  "opam-state" {>= "2.1.0~beta2"}
+  "opam-format" {>= "2.1.0~beta2"}
+  "opam-core" {>= "2.1.0~beta2"}
+  "opam-client" {>= "2.1.0~beta2"}
   "bos"
   "ocaml-version"
   "fmt"

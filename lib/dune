@@ -1,3 +1,3 @@
 (library
  (name opam_sysinstall)
- (libraries ocaml-version cmdliner bos fmt fmt.tty))
+ (libraries ocaml-version cmdliner bos fmt fmt.tty opam-core opam-client opam-format opam-state))

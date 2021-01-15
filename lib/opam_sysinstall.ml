@@ -27,7 +27,7 @@ let check_versions = function
          number of latest versions to install (e.g. --latest=3)";
       exit (-1)
 
-let bound_check ocv = Ov.compare ocv Ov.Releases.v4_08_0 >= 0
+let bound_check ocv = Ov.compare ocv Ov.Releases.v4_00 >= 0
 
 let first_n n =
   let rec aux m acc = function
@@ -43,7 +43,7 @@ let info_run ?env ?err ?(no_log = false) cmd =
   |> OS.Cmd.run_io ?env ?err cmd
   |> if no_log then OS.Cmd.to_null else OS.Cmd.to_stdout
 
-let run ocvs latest prefix quiet no_log jobs dry_run =
+let run ocvs latest conf quiet no_log jobs dry_run =
   let ocvs =
     if List.length ocvs = 0 then
       first_n (check_versions latest) (Ov.Releases.recent |> List.rev)
@@ -54,12 +54,13 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
         ocvs
   in
   let ocvs = List.filter bound_check ocvs in
+  let build_cmds = Opam.build_cmds ocvs in
   let len = List.length ocvs in
   if len = 0 then (
     error Fmt.stdout "Filtered out all OCaml Versions";
     exit (-1) |> ignore );
   let mk_prefix ocv =
-    match prefix with
+    match conf.Ocaml.prefix with
     | Some p ->
         if len > 1 then Some (Filename.concat p (Ov.to_string ocv)) else Some p
     | None ->
@@ -73,7 +74,16 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
     else info_run ~no_log
   in
   let dry f = if dry_run then Ok () else f () in
+  let run_list r lst =
+    let rec aux xs () =
+      match xs with [] -> Ok () | x :: xs -> r x >>= aux xs
+    in
+    aux lst ()
+  in
   let f tmpdir ocv =
+    let pre_configure =
+      List.find (fun (o, _) -> Ov.equal o ocv) build_cmds |> snd
+    in
     let res =
       dry (fun () -> OS.Dir.set_current tmpdir) >>= fun () ->
       r @@ Opam.source_compiler ocv >>= fun () ->
@@ -81,8 +91,14 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
           OS.Dir.set_current
             Fpath.(tmpdir / ("ocaml-base-compiler." ^ Ov.to_string ocv)))
       >>= fun () ->
-      r @@ Ocaml.configure ?prefix:(mk_prefix ocv) () >>= fun () ->
-      r @@ Ocaml.make_world_opt ~jobs >>= fun () -> r @@ Ocaml.make_install
+      let conf = { conf with prefix = mk_prefix ocv } in
+      run_list r
+        ( pre_configure
+        @ [
+            Ocaml.configure ocv conf;
+            Ocaml.make_world_opt ~jobs;
+            Ocaml.make_install;
+          ] )
     in
     res
     |> handle_error quiet ("system compiler " ^ Ov.to_string ocv ^ " installed")
@@ -93,14 +109,6 @@ let run ocvs latest prefix quiet no_log jobs dry_run =
     ocvs
 
 open Cmdliner
-
-let prefix =
-  let docv = "PREFIX" in
-  let doc =
-    "The ./configure prefix parameter to use -- defaults to OCaml's built-in \
-     default"
-  in
-  Arg.(value & opt (some string) None & info ~doc ~docv [ "prefix"; "p" ])
 
 let ocvs =
   let doc = "OCaml version to build and install" in
@@ -137,7 +145,8 @@ let info =
   Term.info ~doc "build"
 
 let term =
-  Term.(pure run $ ocvs $ latest $ prefix $ quiet $ no_log $ jobs $ dry_run)
+  Term.(
+    pure run $ ocvs $ latest $ Ocaml.cmdliner $ quiet $ no_log $ jobs $ dry_run)
 
 let build = (term, info)
 
