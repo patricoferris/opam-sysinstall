@@ -25,13 +25,19 @@ jobs:
     - name: Install location
       run: mkdir -p $GITHUB_WORKSPACE/ocaml
     - name: Testing (dry run)
-      run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.11.1,4.07.1 --dry-run
+      run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.12.0,4.10.2,4.07.1,4.04.1,4.02.3 --jobs=4 --dry-run
     - name: Testing
-      run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.11.1,4.07.1
+      run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.12.0,4.10.2,4.07.1,4.04.1,4.02.3 --jobs=4
     - name: Inspecting
       run: |
         echo "let () = print_endline Sys.ocaml_version" > main.ml
-        $GITHUB_WORKSPACE/ocaml/4.11.1/bin/ocamlopt main.ml -o eleven.out
-        ./eleven.out
+        $GITHUB_WORKSPACE/ocaml/4.12.0/bin/ocamlopt main.ml -o twelve.out
+        ./twelve.out
+        $GITHUB_WORKSPACE/ocaml/4.10.2/bin/ocamlopt main.ml -o ten.out
+        ./ten.out
         $GITHUB_WORKSPACE/ocaml/4.07.1/bin/ocamlopt main.ml -o seven.out
         ./seven.out
+        $GITHUB_WORKSPACE/ocaml/4.04.1/bin/ocamlopt main.ml -o four.out
+        ./four.out
+        $GITHUB_WORKSPACE/ocaml/4.02.3/bin/ocamlopt main.ml -o two.out
+        ./two.out
