@@ -19,4 +19,4 @@
   bos
   ocaml-version
   fmt
-  cmdliner))
+  (cmdliner (>= 1.1))))

@@ -41,7 +41,7 @@ module Auto_Conf : Configure = struct
 
   let configure t =
     let mk_list = to_list in
-    Cmd.(v "./configure" %% of_list (mk_list t))
+    Bos.Cmd.(v "./configure" %% of_list (mk_list t))
 end
 
 module Old_Conf : Configure = struct
