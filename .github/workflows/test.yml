@@ -1,43 +1,59 @@
 name: Tests for opam-sysinstall
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
-        operating-system: [ macos-latest, ubuntu-latest ]
-        ocaml-version: [ '4.11.1' ]
-    runs-on: ${{ matrix.operating-system }}
+        os:
+          - macos-12
+          - macos-latest
+          - ubuntu-latest 
+        ocaml-compiler:
+          - 4.11.x
+
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: avsm/setup-ocaml@v1
-      with:
-        ocaml-version: ${{ matrix.ocaml-version }}
-    - name: Pinning Package
-      run: opam pin add -n -y .
-    - name: Packages
-      run: opam depext -yt opam-sysinstall
-    - name: Dependencies
-      run: opam install -t -y . --deps-only
-    - name: Building
-      run: opam exec -- dune build
-    - name: Installing
-      run: opam exec -- dune install
-    - name: Install location
-      run: mkdir -p $GITHUB_WORKSPACE/ocaml
-    - name: Testing (dry run)
-      run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.11.1,4.10.2,4.07.1,4.04.1,4.02.3 --jobs=4 --dry-run
-    - name: Testing
-      run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.11.1,4.10.2,4.07.1,4.04.1,4.02.3 --jobs=4
-    - name: Inspecting
-      run: |
-        echo "let () = print_endline Sys.ocaml_version" > main.ml
-        $GITHUB_WORKSPACE/ocaml/4.11.1/bin/ocamlopt main.ml -o eleven.out
-        ./eleven.out
-        $GITHUB_WORKSPACE/ocaml/4.10.2/bin/ocamlopt main.ml -o ten.out
-        ./ten.out
-        $GITHUB_WORKSPACE/ocaml/4.07.1/bin/ocamlopt main.ml -o seven.out
-        ./seven.out
-        $GITHUB_WORKSPACE/ocaml/4.04.1/bin/ocamlopt main.ml -o four.out
-        ./four.out
-        $GITHUB_WORKSPACE/ocaml/4.02.3/bin/ocamlopt main.ml -o two.out
-        ./two.out
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - name: Pinning Package
+        run: opam pin add -n -y .
+      - name: Packages
+        run: opam depext -yt opam-sysinstall
+      - name: Dependencies
+        run: opam install -t -y . --deps-only
+      - name: Building
+        run: opam exec -- dune build
+      - name: Installing
+        run: opam exec -- dune install
+      - name: Install location
+        run: mkdir -p $GITHUB_WORKSPACE/ocaml
+      - name: Testing (dry run)
+        run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.11.1,4.10.2,4.07.1,4.04.1,4.02.3 --jobs=4 --dry-run
+      - name: Testing
+        run: opam exec -- opam sysinstall build --prefix=$GITHUB_WORKSPACE/ocaml --versions=4.11.1,4.10.2,4.07.1,4.04.1,4.02.3 --jobs=4
+      - name: Inspecting
+        run: |
+          echo "let () = print_endline Sys.ocaml_version" > main.ml
+          $GITHUB_WORKSPACE/ocaml/4.11.1/bin/ocamlopt main.ml -o eleven.out
+          ./eleven.out
+          $GITHUB_WORKSPACE/ocaml/4.10.2/bin/ocamlopt main.ml -o ten.out
+          ./ten.out
+          $GITHUB_WORKSPACE/ocaml/4.07.1/bin/ocamlopt main.ml -o seven.out
+          ./seven.out
+          $GITHUB_WORKSPACE/ocaml/4.04.1/bin/ocamlopt main.ml -o four.out
+          ./four.out
+          $GITHUB_WORKSPACE/ocaml/4.02.3/bin/ocamlopt main.ml -o two.out
+          ./two.out

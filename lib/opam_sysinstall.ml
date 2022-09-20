@@ -142,22 +142,20 @@ let jobs =
 
 let info =
   let doc = "Build and install a system compiler." in
-  Term.info ~doc "build"
+  Cmd.info ~doc "build"
 
 let term =
   Term.(
-    pure run $ ocvs $ latest $ Ocaml.cmdliner $ quiet $ no_log $ jobs $ dry_run)
+    const run $ ocvs $ latest $ Ocaml.cmdliner $ quiet $ no_log $ jobs $ dry_run)
 
-let build = (term, info)
-
-let cmds = [ build ]
-
-let doc = "Opam plugin for installing system compilers"
+let cmds = Cmd.v info term
 
 let main =
-  ( Term.ret @@ Term.pure (`Help (`Pager, None)),
-    Term.info "opam-sysinstall" ~doc )
+  let doc = "Opam plugin for installing system compilers" in
+  let info = Cmd.info "opam-sysinstall" ~doc in
+  let default = Term.ret @@ Term.const (`Help (`Pager, None)) in
+  Cmd.group info ~default [ cmds ]
 
 let cli () =
   Fmt_tty.setup_std_outputs ();
-  Term.(exit @@ eval_choice main cmds)
+  exit (Cmd.eval main)
